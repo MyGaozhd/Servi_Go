@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+//变量的初始化
 func Test0_0(t *testing.T) {
 	a := 1
 	b := 1
