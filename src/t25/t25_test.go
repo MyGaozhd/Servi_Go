@@ -1,30 +1,31 @@
-package t24
+package t25
 
 import (
 	"sync"
 	"testing"
-	"time"
 )
 
 /**
-   var mu sync.Mutex
-   defer func() {
-				mu.Unlock()
-    }()
-	mu.Lock()
+  var wg sync.WaitGroup
+  wg.Add(1)
+  wg.Done()
+  wg.Wait()
 */
-func Test24_0(t *testing.T) {
+func Test25_0(t *testing.T) {
 	var mu sync.Mutex
 	count := 0
+	var wg sync.WaitGroup
 	for i := 0; i < 5000; i++ {
+		wg.Add(1)
 		go func() {
 			defer func() {
 				mu.Unlock()
 			}()
 			mu.Lock()
 			count++
+			wg.Done()
 		}()
 	}
-	time.Sleep(time.Second * 2)
+	wg.Wait()
 	t.Log(count)
 }
