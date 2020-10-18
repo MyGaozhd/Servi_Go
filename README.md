@@ -27,5 +27,9 @@
 ##t24 并发控制
 ##t25 等待协程执行结束，类似java的join
 ##t26 没有buffer的channle
-##t27 有buffer的channel 
+##t27 有buffer的channel
+##t28 多路选择和超时
+##t29 channel的关闭和广播 
+##t30 任务的取消
+##t31 context与任务的取消 
 
