@@ -55,10 +55,20 @@ func allResponse2() string {
 	finalRet := ""
 	for i := 0; i < 10; i++ {
 		go func(i int) {
-			finalRet += runTask(i) + "\n"
+			finalRet = syncBuildString(finalRet, runTask(i)+"\n")
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
 	return finalRet
+}
+
+var mu sync.Mutex
+
+func syncBuildString(str1 string, str2 string) string {
+	defer func() {
+		mu.Unlock()
+	}()
+	mu.Lock()
+	return str1 + str2
 }
