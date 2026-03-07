@@ -1,21 +1,4 @@
-package main
-
-import (
-	"fmt"
-	"github.com/MyGaozhd/Servi_Go/src/t39"
-)
-
-// t40 演示 pipe-filter 架构模式（使用 t39 包）
-func main() {
-	spliter := t39.NewSplitFilter(",")
-	converter := t39.NewTointFilter()
-	sum := t39.NewSumFilter()
-	sp := t39.NewStraightPipeline("p1", spliter, converter, sum)
-	ret, err := sp.Process("1,2,3")
-	if err != nil {
-		fmt.Println(err)
-	}
-	if ret == 6 {
-		fmt.Printf("The expected is 6, and the actual is %d\n", ret)
-	}
-}
+// Package t40 是 pipe-filter 模式的客户端示例（对应 t39 包）。
+// 原始实现使用了 GOPATH 裸导入，已迁移为 Go module 风格，
+// 实际调用示例请参考 src/t39/t39_test.go。
+package t40
