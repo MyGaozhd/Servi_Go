@@ -5,7 +5,7 @@ import "fmt"
 func main() {
 	var son = &son{}
 	son.Name = "123"
-	fmt.Println(son.pr)
+	fmt.Println(son.pr())
 }
 
 type father struct {

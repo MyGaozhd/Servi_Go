@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"t39"
+	"github.com/MyGaozhd/Servi_Go/src/t39"
 )
 
-// 需要将t39文件夹下的类拷贝到go/src目录下
+// t40 演示 pipe-filter 架构模式（使用 t39 包）
 func main() {
 	spliter := t39.NewSplitFilter(",")
 	converter := t39.NewTointFilter()
@@ -16,6 +16,6 @@ func main() {
 		fmt.Println(err)
 	}
 	if ret == 6 {
-		fmt.Println("The expected is 6, but the actual is %d", ret)
+		fmt.Printf("The expected is 6, and the actual is %d\n", ret)
 	}
 }

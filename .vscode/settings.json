@@ -1,0 +1,24 @@
+{
+    "go.gopath": "${env:HOME}/go",
+    "go.testFlags": ["-v"],
+    "go.testTimeout": "30s",
+    "go.toolsManagement.checkForUpdates": "local",
+    "go.useLanguageServer": true,
+    "go.testOnSave": false,
+    "go.coverOnSave": false,
+    "go.buildOnSave": "off",
+    "go.lintOnSave": "off",
+    "go.vetOnSave": "off",
+    "go.testEnvVars": {},
+    "go.testTags": "",
+    "[go]": {
+        "editor.formatOnSave": false,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "[gotmpl]": {
+        "editor.formatOnSave": false
+    }
+}
+
