@@ -1,42 +1,31 @@
-const API = 'http://localhost:8080/api'
+// app.js —— 应用入口，负责初始化和事件绑定
+// 通过事件委托减少监听器数量，所有业务操作委托给 api / state / render
 
-// ── 状态 ──────────────────────────────────────────────
-let todos  = []
-let filter = 'all'   // 'all' | 'active' | 'done'
-let editingId = null
+import { api }    from './api.js'
+import { state }  from './state.js'
+import { renderAll, renderList } from './render.js'
 
-// ── 初始化 ────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  fetchTodos()
-  bindForm()
-  bindFilter()
+// ── 初始化 ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadTodos()
+  bindAddForm()
+  bindFilterBar()
+  bindListDelegate()
   bindModal()
 })
 
-// ── API 工具 ──────────────────────────────────────────
-async function request(path, options = {}) {
-  const res = await fetch(API + path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  })
-  if (res.status === 204) return null
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || '请求失败')
-  return data
-}
-
-// ── 拉取列表 ──────────────────────────────────────────
-async function fetchTodos() {
+// ── 数据加载 ──────────────────────────────────────────────────────────────────
+async function loadTodos() {
   try {
-    todos = await request('/todos') ?? []
-    renderAll()
+    state.setTodos(await api.list() ?? [])
+    refresh()
   } catch (e) {
     toast('❌ 加载失败：' + e.message)
   }
 }
 
-// ── 新增事项 ──────────────────────────────────────────
-function bindForm() {
+// ── 新增事项 ──────────────────────────────────────────────────────────────────
+function bindAddForm() {
   document.getElementById('add-form').addEventListener('submit', async e => {
     e.preventDefault()
     const title    = document.getElementById('inp-title').value.trim()
@@ -44,12 +33,9 @@ function bindForm() {
     const priority = document.getElementById('inp-priority').value
     if (!title) return toast('请输入事项标题')
     try {
-      const todo = await request('/todos', {
-        method: 'POST',
-        body: JSON.stringify({ title, note, priority }),
-      })
-      todos.unshift(todo)
-      renderAll()
+      const todo = await api.create({ title, note, priority })
+      state.prepend(todo)
+      refresh()
       e.target.reset()
       toast('✅ 已添加')
     } catch (e) {
@@ -58,51 +44,65 @@ function bindForm() {
   })
 }
 
-// ── 筛选 Tab ──────────────────────────────────────────
-function bindFilter() {
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      filter = btn.dataset.filter
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
-      renderList()
-    })
+// ── 筛选 Tab ──────────────────────────────────────────────────────────────────
+function bindFilterBar() {
+  document.querySelector('.filter-bar').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn')
+    if (!btn) return
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    state.setFilter(btn.dataset.filter)
+    renderList(state.visible())
   })
 }
 
-// ── 切换完成状态 ──────────────────────────────────────
+// ── 列表事件委托（统一处理 checkbox / 编辑 / 删除）───────────────────────────
+function bindListDelegate() {
+  document.getElementById('todo-list').addEventListener('change', async e => {
+    const el = e.target.closest('[data-check]')
+    if (!el) return
+    await toggleDone(+el.dataset.check, el.checked)
+  })
+
+  document.getElementById('todo-list').addEventListener('click', async e => {
+    const editBtn = e.target.closest('[data-edit]')
+    const delBtn  = e.target.closest('[data-del]')
+    if (editBtn) openEdit(+editBtn.dataset.edit)
+    if (delBtn)  await deleteTodo(+delBtn.dataset.del)
+  })
+}
+
+// ── 操作：切换完成 ────────────────────────────────────────────────────────────
 async function toggleDone(id, done) {
   try {
-    const updated = await request(`/todos/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ done }),
-    })
-    replaceTodo(updated)
-    renderAll()
+    const updated = await api.update(id, { done })
+    state.replace(updated)
+    refresh()
   } catch (e) {
     toast('❌ ' + e.message)
   }
 }
 
-// ── 删除 ──────────────────────────────────────────────
+// ── 操作：删除 ────────────────────────────────────────────────────────────────
 async function deleteTodo(id) {
   if (!confirm('确认删除？')) return
   try {
-    await request(`/todos/${id}`, { method: 'DELETE' })
-    todos = todos.filter(t => t.id !== id)
-    renderAll()
+    await api.remove(id)
+    state.remove(id)
+    refresh()
     toast('🗑️ 已删除')
   } catch (e) {
     toast('❌ ' + e.message)
   }
 }
 
-// ── 编辑 Modal ────────────────────────────────────────
+// ── 编辑 Modal ────────────────────────────────────────────────────────────────
 function bindModal() {
   document.getElementById('modal-cancel').addEventListener('click', closeModal)
   document.getElementById('modal-backdrop').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal()
   })
+
   document.getElementById('modal-form').addEventListener('submit', async e => {
     e.preventDefault()
     const title    = document.getElementById('modal-title').value.trim()
@@ -110,12 +110,9 @@ function bindModal() {
     const priority = document.getElementById('modal-priority').value
     if (!title) return toast('标题不能为空')
     try {
-      const updated = await request(`/todos/${editingId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ title, note, priority }),
-      })
-      replaceTodo(updated)
-      renderAll()
+      const updated = await api.update(state.editingId, { title, note, priority })
+      state.replace(updated)
+      refresh()
       closeModal()
       toast('✅ 已保存')
     } catch (e) {
@@ -125,9 +122,9 @@ function bindModal() {
 }
 
 function openEdit(id) {
-  const todo = todos.find(t => t.id === id)
+  const todo = state.todos.find(t => t.id === id)
   if (!todo) return
-  editingId = id
+  state.startEdit(id)
   document.getElementById('modal-title').value    = todo.title
   document.getElementById('modal-note').value     = todo.note ?? ''
   document.getElementById('modal-priority').value = todo.priority
@@ -135,88 +132,17 @@ function openEdit(id) {
 }
 
 function closeModal() {
-  editingId = null
+  state.endEdit()
   document.getElementById('modal-backdrop').classList.remove('open')
 }
 
-// ── 渲染 ──────────────────────────────────────────────
-function renderAll() {
-  renderStats()
-  renderList()
+// ── 渲染快捷方法 ──────────────────────────────────────────────────────────────
+function refresh() {
+  renderAll(state.todos)
+  renderList(state.visible())
 }
 
-function renderStats() {
-  const total  = todos.length
-  const done   = todos.filter(t => t.done).length
-  const active = total - done
-  document.getElementById('stat-total').textContent  = total
-  document.getElementById('stat-active').textContent = active
-  document.getElementById('stat-done').textContent   = done
-}
-
-function renderList() {
-  const container = document.getElementById('todo-list')
-  const visible = todos.filter(t => {
-    if (filter === 'active') return !t.done
-    if (filter === 'done')   return t.done
-    return true
-  })
-  // 高优先级排前
-  const priority = { high: 0, medium: 1, low: 2 }
-  visible.sort((a, b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1
-    return (priority[a.priority] ?? 1) - (priority[b.priority] ?? 1)
-  })
-
-  if (visible.length === 0) {
-    container.innerHTML = `<div class="empty">暂无事项 🎉</div>`
-    return
-  }
-  container.innerHTML = visible.map(todoCard).join('')
-
-  // 绑定卡片内的事件
-  container.querySelectorAll('[data-check]').forEach(el =>
-    el.addEventListener('change', () => toggleDone(+el.dataset.check, el.checked)))
-  container.querySelectorAll('[data-edit]').forEach(el =>
-    el.addEventListener('click', () => openEdit(+el.dataset.edit)))
-  container.querySelectorAll('[data-del]').forEach(el =>
-    el.addEventListener('click', () => deleteTodo(+el.dataset.del)))
-}
-
-function todoCard(t) {
-  const priorityMap = { low: '低', medium: '中', high: '高' }
-  const date = new Date(t.created_at).toLocaleDateString('zh-CN', {
-    month: 'numeric', day: 'numeric'
-  })
-  return `
-  <div class="todo-card ${t.done ? 'done' : ''}">
-    <input type="checkbox" data-check="${t.id}" ${t.done ? 'checked' : ''}>
-    <div class="todo-body">
-      <div class="todo-title">${escHtml(t.title)}</div>
-      ${t.note ? `<div class="todo-note">${escHtml(t.note)}</div>` : ''}
-      <div class="todo-meta">
-        <span class="badge ${t.priority}">${priorityMap[t.priority] ?? t.priority}优先级</span>
-        <span class="todo-time">${date}</span>
-      </div>
-    </div>
-    <div class="todo-actions">
-      <button class="btn-icon edit" data-edit="${t.id}" title="编辑">✏️</button>
-      <button class="btn-icon"      data-del="${t.id}"  title="删除">🗑️</button>
-    </div>
-  </div>`
-}
-
-// ── 工具 ──────────────────────────────────────────────
-function replaceTodo(updated) {
-  const idx = todos.findIndex(t => t.id === updated.id)
-  if (idx !== -1) todos[idx] = updated
-}
-
-function escHtml(str) {
-  return str.replace(/[&<>"']/g, c =>
-    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))
-}
-
+// ── Toast ─────────────────────────────────────────────────────────────────────
 let toastTimer
 function toast(msg) {
   const el = document.getElementById('toast')

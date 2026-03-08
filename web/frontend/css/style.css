@@ -263,3 +263,24 @@ header .subtitle { font-size: .85rem; color: var(--text-muted); }
   z-index: 200;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
+
+/* ===== 优先级卡片着色 ===== */
+/* 左侧 4px 彩色竖条 + 极淡背景，让优先级一眼可辨 */
+
+.todo-card.priority-high {
+  border-left: 4px solid var(--high);
+  background: #fff8f8;
+}
+.todo-card.priority-medium {
+  border-left: 4px solid var(--medium);
+  background: #fffbf5;
+}
+.todo-card.priority-low {
+  border-left: 4px solid var(--low);
+  background: #f8fbf5;
+}
+
+/* 已完成时淡化彩色边条，保持视觉层次 */
+.todo-card.done.priority-high   { border-left-color: #f0b0ae; background: var(--surface); }
+.todo-card.done.priority-medium { border-left-color: #f0d0a0; background: var(--surface); }
+.todo-card.done.priority-low    { border-left-color: #b8d8a0; background: var(--surface); }
