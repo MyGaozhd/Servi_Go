@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日常事项记录</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <h1>📋 日常事项</h1>
+    <span class="subtitle">Keep it simple, get it done.</span>
+  </header>
+
+  <!-- ── 统计栏 ── -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="num" id="stat-total">0</div>
+      <div class="label">全部</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="stat-active">0</div>
+      <div class="label">待完成</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="stat-done">0</div>
+      <div class="label">已完成</div>
+    </div>
+  </div>
+
+  <!-- ── 新增表单 ── -->
+  <div class="form-card">
+    <h2>＋ 新增事项</h2>
+    <form id="add-form">
+      <div class="form-row">
+        <input id="inp-title" type="text" placeholder="事项标题（必填）" autocomplete="off">
+        <select id="inp-priority">
+          <option value="low">低优先级</option>
+          <option value="medium" selected>中优先级</option>
+          <option value="high">高优先级</option>
+        </select>
+        <button type="submit" class="btn-add">添加</button>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <textarea id="inp-note" placeholder="备注（选填）"></textarea>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── 筛选 Tab ── -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">全部</button>
+    <button class="filter-btn" data-filter="active">待完成</button>
+    <button class="filter-btn" data-filter="done">已完成</button>
+  </div>
+
+  <!-- ── Todo 列表 ── -->
+  <div class="list" id="todo-list">
+    <div class="empty">正在加载…</div>
+  </div>
+
+  <!-- ── 编辑 Modal ── -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal">
+      <h2>✏️ 编辑事项</h2>
+      <form id="modal-form">
+        <div class="form-row">
+          <label for="modal-title">标题</label>
+          <input id="modal-title" type="text" required>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <label for="modal-note">备注</label>
+          <textarea id="modal-note" rows="3"></textarea>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <label for="modal-priority">优先级</label>
+          <select id="modal-priority">
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="modal-cancel">取消</button>
+          <button type="submit" class="btn-save">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Toast 通知 ── -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
